@@ -3,6 +3,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { computeRawSQIandCost } from "../../functions/functions";
 import type { Box, RawCost } from "../../functions/types";
 import { THICKNESS } from "../../functions/consts";
+import { useNavigate } from "@tanstack/react-router";
 
   
     type FormValues = {
@@ -20,11 +21,19 @@ import { THICKNESS } from "../../functions/consts";
         CoverT: number;
     };
 
-export const Form1 = ({onSubmitCallback}: {onSubmitCallback: (cost: RawCost) => void}) => {
+export const Form1 = () => {
 
     const {register, handleSubmit, getValues, watch} = useForm<FormValues>();
-    const [boxValues, setBoxValues] = useState<{box: Box, rawCost: RawCost}>();
+    const navigation = useNavigate();
 
+    const onSubmitCallback = (rawCost: RawCost) => {
+        navigation({ 
+            to: '/form2', 
+            search: { 
+                rawCost: JSON.stringify(rawCost) 
+            } 
+        });
+    }
 
     const [coverT, setCoverT] = useState<number>(0);
 
@@ -61,7 +70,6 @@ export const Form1 = ({onSubmitCallback}: {onSubmitCallback: (cost: RawCost) => 
 
         const rawSQI = computeRawSQIandCost(box);
         console.log('Raw SQI and Cost:', rawSQI);
-        setBoxValues({box, rawCost: rawSQI});
         onSubmitCallback(rawSQI);
     };
 
@@ -215,12 +223,6 @@ export const Form1 = ({onSubmitCallback}: {onSubmitCallback: (cost: RawCost) => 
                     </table>
                 </form>
             </div>
-            {boxValues && (
-                <div className='mt-4 p-4 bg-white rounded-lg shadow-lg w-full max-w-[500px]'>
-                    <h2 className='text-xl font-bold mb-2'>Box Details</h2>
-                    <pre className='bg-gray-100 p-2 rounded-lg'>{JSON.stringify(boxValues, null, 2)}</pre>
-                </div>
-            )}
         </div>
     )
 

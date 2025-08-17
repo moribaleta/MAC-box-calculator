@@ -1,26 +1,42 @@
-import { useForm } from "react-hook-form";
-import { LABOR_LEVELS, PAINT_COST_PERCENTAGE, STAIN_COST_PERCENTAGE, SUPPLIES_COST_PERCENTAGE } from "../../functions/consts";
-import type { LaborAndSurfaceCost, RawCost } from "../../functions/types";
-import { useState } from "react";
-import { computeLaborAndSurfaceCost } from "../../functions/functions";
+import {useForm} from "react-hook-form";
+import {LABOR_LEVELS, PAINT_COST_PERCENTAGE, STAIN_COST_PERCENTAGE, SUPPLIES_COST_PERCENTAGE} from "../../functions/consts";
+import type {LaborAndSurfaceCost, RawCost}
+from "../../functions/types";
+import {computeLaborAndSurfaceCost} from "../../functions/functions";
+import {useNavigate, useSearch, useRouter} from "@tanstack/react-router";
 
 type FormValues = {
     laborLevel: keyof typeof LABOR_LEVELS,
-    supplies:number,
-    stains:number,
-    paint:number,
+    supplies: number,
+    stains: number,
+    paint: number
 }
 
-export const Form2 = ({cost, onSubmitCallback}: {cost?: RawCost, onSubmitCallback: (cost: LaborAndSurfaceCost) => void}) => {
+export const Form2 = () => {
+    const {register, handleSubmit} = useForm < FormValues > ();
+    const navigate = useNavigate();
+    const router = useRouter();
+    const search = useSearch({from: '/form2/'});
 
-    const [laborAndSurfaceCost, setLaborAndSurfaceCost] = useState<LaborAndSurfaceCost>();
-    const {register, handleSubmit} = useForm<FormValues>();
+    // Parse the rawCost from search params
+    const rawCost : RawCost | null = search.rawCost
+        ? JSON.parse(search.rawCost)
+        : null;
 
-    const onSubmit = (data: FormValues) => {
+    const onSubmitCallback = (laborAndSurfaceCost : LaborAndSurfaceCost) => {
+        navigate({
+            to: '/form3',
+            search: {
+                laborAndSurfaceCost: JSON.stringify(laborAndSurfaceCost)
+            }
+        });
+    };
 
-        if (!cost) {
-            console.error("Cost is not provided");
-            alert("Cost is not provided");
+    const onSubmit = (data : FormValues) => {
+
+        if (!rawCost) {
+            console.error("Raw cost is not provided");
+            alert("Raw cost is not provided");
             return;
         }
 
@@ -29,19 +45,22 @@ export const Form2 = ({cost, onSubmitCallback}: {cost?: RawCost, onSubmitCallbac
         const stainsCost = data.stains;
         const paintCost = data.paint;
 
-        const computedCost: LaborAndSurfaceCost = computeLaborAndSurfaceCost(cost, laborCost, stainsCost, suppliesCost, paintCost);
+        const computedCost : LaborAndSurfaceCost = computeLaborAndSurfaceCost(rawCost, laborCost, stainsCost, suppliesCost, paintCost);
         console.log("Labor and Surface Cost:", computedCost);
-        setLaborAndSurfaceCost(computedCost);
         onSubmitCallback(computedCost);
     };
 
-
     const renderLaborOptions = () => {
-        return Object.entries(LABOR_LEVELS).map(([key, value]) => (
-            <option key={key} value={key}>
-                {key.charAt(0).toUpperCase() + key.slice(1)} : {value}
-            </option>
-        ));
+        return Object
+            .entries(LABOR_LEVELS)
+            .map(([key, value]) => (
+                <option key={key} value={key}>
+                    {key
+                        .charAt(0)
+                        .toUpperCase() + key.slice(1)}
+                    : {value}
+                </option>
+            ));
     };
 
     return (
@@ -49,6 +68,20 @@ export const Form2 = ({cost, onSubmitCallback}: {cost?: RawCost, onSubmitCallbac
             className='flex flex-col items-center justify-center w-full h-full bg-gray-400 min-h-screen min-w-screen'>
             <div
                 className='flex flex-col items-center w-full max-w-[500px] bg-white rounded-lg shadow-lg p-4 gap-4'>
+
+                {/* Display raw cost info */}
+                {rawCost && (
+                    <div className="w-full bg-blue-50 p-3 rounded-lg mb-4">
+                        <h3 className="font-semibold mb-2">Raw Cost Summary:</h3>
+                        <p>Total SQI: {rawCost
+                                .totalSQI
+                                .toFixed(2)}</p>
+                        <p>Total Cost: ${rawCost
+                                .totalCost
+                                .toFixed(2)}</p>
+                    </div>
+                )}
+
                 <form
                     className='flex flex-col items-center gap-4'
                     onSubmit={handleSubmit(onSubmit)}>
@@ -107,20 +140,28 @@ export const Form2 = ({cost, onSubmitCallback}: {cost?: RawCost, onSubmitCallbac
                                 </td>
                             </tr>
 
-                            <input
-                                type='submit'
-                                value='Calculate'
-                                className='bg-blue-500 text-white rounded-lg px-4 py-2 cursor-pointer hover:bg-blue-600 transition-colors duration-200'/>
+                            <tr>
+                                <td className="px-2 py-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => router.history.back()}
+                                        className='bg-gray-500 text-white rounded-lg px-4 py-2 cursor-pointer hover:bg-gray-600 transition-colors duration-200'>
+                                        Back
+                                    </button>
+                                </td>
+                                <td className="px-2 py-1">
+                                    <input
+                                        type='submit'
+                                        value='Calculate'
+                                        className='bg-blue-500 text-white rounded-lg px-4 py-2 cursor-pointer hover:bg-blue-600 transition-colors duration-200'/>
+                                </td>
+                            </tr>
+
                         </tbody>
                     </table>
                 </form>
+
             </div>
-            {laborAndSurfaceCost && (
-                <div className='mt-4 p-4 bg-white rounded-lg shadow-lg w-full max-w-[500px]'>
-                    <h2 className='text-xl font-bold mb-2'>Box Details</h2>
-                    <pre className='bg-gray-100 p-2 rounded-lg'>{JSON.stringify(laborAndSurfaceCost, null, 2)}</pre>
-                </div>
-            )}
         </div>
     );
 }
